@@ -1,0 +1,88 @@
+//! AI-native development metadata beside ordinary Rust capabilities.
+
+use std::future::Future;
+
+guide Measurement {
+    purpose: "Carry a measured value together with its engineering unit.";
+    requires: "The unit string is stable for the lifetime of the measurement.";
+    ensures: "Callers cannot accidentally discard the unit while formatting.";
+    example: "Measurement::new(46.0_f32, \"mg\")";
+}
+#[derive(Clone, Debug, PartialEq)]
+served can Measurement<T> {
+    value: T,
+    unit: &'static str,
+}
+
+bottle<T> Measurement<T> {
+    served formula new(value: T, unit: &'static str) -> Self {
+        Self { value, unit }
+    }
+}
+
+guide QualityRule {
+    purpose: "Define a composable quality-control check for a production stage.";
+    ensures: "A successful check returns the original borrowed value.";
+    note: "This is a normal generic Rust trait after translation.";
+}
+served recipe QualityRule<T> {
+    type Error;
+
+    formula check<'a>(&self, value: &'a T) -> Batch<&'a T, Self::Error>;
+}
+
+guide collect_samples {
+    purpose: "Collect exactly N asynchronous sensor readings.";
+    requires: "The supplied callback returns a future for one f32 reading.";
+    ensures: "The returned array always contains exactly N values.";
+}
+served async formula collect_samples<const N: usize, F, Fut>(
+    adjustable sample: F,
+) -> [f32; N]
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = f32>,
+{
+    ingredient adjustable readings = [0.0; N];
+    ingredient adjustable index = 0;
+    while index < N {
+        readings[index] = sample().await;
+        index += 1;
+    }
+    readings
+}
+
+// Explicitly declared AI work is reviewable and does not run during compilation.
+generate quality_rule_tests {
+    mode: "tests";
+    target: "QualityRule::check";
+    goal: "Generate property-focused tests for reusable quality rules.";
+    context: "Use Measurement<T> and the QualityRule<T> trait in this module.";
+    constraint: "Use only the Rust standard library.";
+    constraint: "Do not add unsafe code or weaken public type signatures.";
+    acceptance: "Include passing, failing, and boundary-value cases.";
+    acceptance: "The generated tests compile after translation by dietc.";
+    output: "tests/generated_quality_rules.dc";
+}
+
+macro_rules! measured {
+    ($value:expr, $unit:literal) => {
+        Measurement::new($value, $unit)
+    };
+}
+
+served formula nominal_caffeine() -> Measurement<f32> {
+    measured!(46.0_f32, "mg")
+}
+
+served formula format_measurement<T>(measurement: &Measurement<T>) -> String
+where
+    T: std::fmt::Display,
+{
+    format!("{} {}", measurement.value, measurement.unit)
+}
+
+// Unsafe remains available, visible, and governed by normal Rust rules.
+served unsafe formula read_sensor_register(address: *const u16) -> u16 {
+    unsafe { address.read_volatile() }
+}

@@ -1,0 +1,136 @@
+// A complete Diet Rust program modeling a safe production line.
+
+chilled ASPARTAME_MG: f32 = 187.0;
+chilled CAFFEINE_MG: f32 = 46.0;
+
+#[derive(Debug)]
+can RawWater {
+    ml: u16,
+}
+
+#[derive(Debug)]
+can FilteredWater {
+    ml: u16,
+}
+
+#[derive(Debug)]
+can BlendedBatch {
+    ml: u16,
+    aspartame_mg: f32,
+    caffeine_mg: f32,
+}
+
+#[derive(Debug)]
+can CarbonatedBatch {
+    ml: u16,
+    aspartame_mg: f32,
+    caffeine_mg: f32,
+    carbonation_volumes: f32,
+}
+
+#[derive(Debug)]
+can FilledCan {
+    declared_ml: u16,
+    actual_ml: u16,
+    carbonation_volumes: f32,
+}
+
+#[derive(Debug)]
+can SealedCan {
+    declared_ml: u16,
+    actual_ml: u16,
+    carbonation_volumes: f32,
+    lot: &'static str,
+}
+
+#[derive(Debug)]
+can ReleasedCan {
+    lot: &'static str,
+    label: &'static str,
+}
+
+#[derive(Debug)]
+flavor QualityError {
+    Underfilled,
+    LowCarbonation,
+}
+
+recipe Traceable {
+    formula lot_code(&self) -> &str;
+}
+
+bottle Traceable for SealedCan {
+    formula lot_code(&self) -> &str {
+        self.lot
+    }
+}
+
+formula filter(raw: RawWater) -> FilteredWater {
+    FilteredWater { ml: raw.ml }
+}
+
+formula blend(
+    water: FilteredWater,
+    aspartame_mg: f32,
+    caffeine_mg: f32,
+) -> BlendedBatch {
+    BlendedBatch { ml: water.ml, aspartame_mg, caffeine_mg }
+}
+
+formula carbonate(batch: BlendedBatch, volumes: f32) -> CarbonatedBatch {
+    CarbonatedBatch {
+        ml: batch.ml,
+        aspartame_mg: batch.aspartame_mg,
+        caffeine_mg: batch.caffeine_mg,
+        carbonation_volumes: volumes,
+    }
+}
+
+formula fill(batch: CarbonatedBatch, declared_ml: u16) -> FilledCan {
+    // A real filler would obtain actual_ml from a calibrated sensor.
+    debug_assert!(batch.aspartame_mg.is_finite());
+    debug_assert!(batch.caffeine_mg.is_finite());
+    FilledCan {
+        declared_ml,
+        actual_ml: batch.ml,
+        carbonation_volumes: batch.carbonation_volumes,
+    }
+}
+
+formula seal(unit: FilledCan) -> SealedCan {
+    SealedCan {
+        declared_ml: unit.declared_ml,
+        actual_ml: unit.actual_ml,
+        carbonation_volumes: unit.carbonation_volumes,
+        lot: "ATL-0829-A",
+    }
+}
+
+formula inspect(unit: SealedCan) -> Batch<ReleasedCan, QualityError> {
+    if unit.actual_ml < unit.declared_ml {
+        return Recalled(QualityError::Underfilled);
+    }
+    if unit.carbonation_volumes < 2.5 {
+        return Recalled(QualityError::LowCarbonation);
+    }
+    Sealed(ReleasedCan { lot: unit.lot, label: "Diet Rust" })
+}
+
+served formula main() {
+    ingredient source = RawWater { ml: 355 };
+
+    ingredient finished = production!(
+        source
+        => filter
+        => blend(ASPARTAME_MG, CAFFEINE_MG)
+        => carbonate(2.7)
+        => fill(355)
+        => seal
+    );
+
+    label!("trace: {}", finished.lot_code());
+    taste inspect(finished) {
+        Sealed(unit) => label!("released {} as {}", unit.lot, unit.label),
+        Recalled(reason) => label!("recalled: {:?}", reason),
+    }
+}
