@@ -44,6 +44,29 @@ macro_rules! production {
     };
 }
 
+// Diet Rust's sorting surface delegates to the standalone DietCokeSort crate.
+#[allow(unused_macros)]
+macro_rules! sort {
+    ($values:expr) => {
+        ::diet_coke_sort::sort($values)
+    };
+    ($values:expr, by $compare:expr) => {
+        ::diet_coke_sort::sort_by($values, $compare)
+    };
+    ($values:expr, flavor lime) => {
+        ::diet_coke_sort::SortFlavor::sort(
+            &::diet_coke_sort::DietCokeWithLime,
+            $values,
+        )
+    };
+    ($values:expr, flavor lime_caffeine_free) => {
+        ::diet_coke_sort::SortFlavor::sort(
+            &::diet_coke_sort::DietCokeWithLimeCaffeineFree,
+            $values,
+        )
+    };
+}
+
 '''
 
 

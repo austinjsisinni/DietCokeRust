@@ -1,0 +1,37 @@
+name: Integration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Translate, compile, and sort
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Test the Diet Rust translator
+        run: python3 -m unittest discover -s tests -v
+      - name: Compile the factory example
+        run: |
+          python3 -m dietc examples/atlanta_plant.dc -o build/atlanta_plant.rs
+          rustc --edition 2024 build/atlanta_plant.rs -o build/atlanta_plant
+          ./build/atlanta_plant
+      - name: Compile the AI-native example
+        run: |
+          python3 -m dietc examples/ai_native.dc -o build/ai_native.rs
+          rustc --edition 2024 --crate-type lib build/ai_native.rs -o build/ai_native.rlib
+      - name: Verify DietCokeSort-backed task sorting
+        run: cargo run --locked --bin diet-coke-sorting

@@ -1,0 +1,13 @@
+[package]
+name = "diet-coke-rust-integration"
+version = "0.3.0"
+edition = "2024"
+publish = false
+build = "rust/build.rs"
+
+[[bin]]
+name = "diet-coke-sorting"
+path = "rust/sorting_main.rs"
+
+[dependencies]
+diet-coke-sort = { git = "https://github.com/austinjsisinni/diet-coke-sort", rev = "b1cff46595fe9c630b117ff44ccd129c81e423dd" }

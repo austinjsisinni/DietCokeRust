@@ -9,9 +9,13 @@ function Assert-NativeSuccess([string] $Step) {
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $CargoBin = Join-Path $env:USERPROFILE ".cargo\bin"
 $RustCompiler = Join-Path $CargoBin "rustc.exe"
+$Cargo = Join-Path $CargoBin "cargo.exe"
 
 if (-not (Test-Path -LiteralPath $RustCompiler)) {
     throw "rustc was not found at $RustCompiler. Install Rust with rustup first."
+}
+if (-not (Test-Path -LiteralPath $Cargo)) {
+    throw "Cargo was not found at $Cargo. Install Rust with rustup first."
 }
 
 # Some Windows installations have the MSVC linker and OneCore libraries but
@@ -77,6 +81,9 @@ try {
         build/ai_native.rs `
         -o build/ai_native.rlib
     Assert-NativeSuccess "AI-native library compilation"
+
+    & $Cargo run --quiet --locked --bin diet-coke-sorting
+    Assert-NativeSuccess "DietCokeSort-backed task sorting"
 
     Write-Host "All local Diet Rust checks passed."
 }

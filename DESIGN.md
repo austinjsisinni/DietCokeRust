@@ -123,6 +123,25 @@ carbonate(blend(filter(raw), syrup, color), 2.7)
 The reference compiler implements the construct as a hygienic Rust macro, so
 the Rust compiler still owns name resolution and type checking.
 
+### Sorting contract
+
+Sorting is owned by the separate
+[`diet-coke-sort`](https://github.com/austinjsisinni/diet-coke-sort) project.
+Diet Rust's `sort!` macro is a thin language surface over that crate:
+
+```text
+sort!(values)                              -> diet_coke_sort::sort(values)
+sort!(values, by comparator)               -> diet_coke_sort::sort_by(values, comparator)
+sort!(values, flavor lime)                 -> DietCokeWithLime.sort(values)
+sort!(values, flavor lime_caffeine_free)   -> DietCokeWithLimeCaffeineFree.sort(values)
+```
+
+This keeps algorithm ownership, stability guarantees, precision behavior, and
+sorting assurance in one dedicated repository. The integration harness pins a
+specific Git commit and its `Cargo.lock` records the resolved source. Standard
+Rust APIs remain available for compatibility, but the official Diet Rust
+sorting surface and examples use DietCokeSort.
+
 ## 6. Typestate manufacturing model
 
 The recommended model uses a new type for each physical state:
@@ -259,3 +278,4 @@ Features that cannot lower clearly to Rust should face a high bar for inclusion.
 - Encoding a single factory's process as the only valid pipeline.
 - Contacting an AI provider, accepting generated changes, or executing generated
   code as an implicit part of compilation.
+- Reimplementing sorting algorithms already owned and tested by DietCokeSort.

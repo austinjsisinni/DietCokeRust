@@ -1,5 +1,7 @@
 # Diet Rust
 
+[![Integration](https://github.com/austinjsisinni/DietCokeRust/actions/workflows/integration.yml/badge.svg)](https://github.com/austinjsisinni/DietCokeRust/actions/workflows/integration.yml)
+
 Diet Rust is a Rust-compatible, AI-native language inspired by Diet Coke's
 ingredient list and manufacturing line. Ownership, borrowing, generics,
 pattern matching, async, macros, and zero-cost abstractions are unchanged. The
@@ -120,6 +122,36 @@ normal Rust function signatures do the safety work. A plant can model each
 stage as a distinct type, making `seal(raw_water)` or `fill(unfiltered_batch)`
 impossible to compile.
 
+## Sorting uses DietCokeSort
+
+Diet Rust delegates sorting to the separate
+[`austinjsisinni/diet-coke-sort`](https://github.com/austinjsisinni/diet-coke-sort)
+project. The native `sort!` surface never lowers to `slice::sort`:
+
+```dietrust
+ingredient report = sort!(&mut tasks);
+
+ingredient report = sort!(
+    &mut tasks,
+    by |left, right| right.priority.cmp(&left.priority),
+);
+
+ingredient report = sort!(&mut measurements, flavor lime);
+```
+
+The forms route to `diet_coke_sort::sort`, `diet_coke_sort::sort_by`, and the
+appropriate precision-preserving Lime flavor. They return DietCokeSort's
+`SortReport`. The root Cargo integration pins the repository revision in
+`Cargo.lock`, so builds do not silently move to a different implementation.
+The GitHub integration workflow uses `cargo --locked` on every push and pull
+request to enforce that relationship.
+
+Run the complete task-sorting example with:
+
+```powershell
+cargo run --bin diet-coke-sorting
+```
+
 ## Try it
 
 Python 3.11+ is the only dependency needed for the reference translator.
@@ -134,9 +166,9 @@ python -m dietc examples/ai_native.dc `
 python -m unittest discover -s tests -v
 ```
 
-On Windows, the repository includes an end-to-end runner that translates both
-examples, executes the Python tests, compiles the generated Rust, and runs the
-factory program:
+On Windows, the repository includes an end-to-end runner that translates the
+examples, executes the Python tests, compiles the generated Rust, runs the
+factory program, and verifies DietCokeSort-backed task sorting through Cargo:
 
 ```powershell
 .\scripts\test_local.ps1

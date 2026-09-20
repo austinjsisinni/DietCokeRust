@@ -66,6 +66,19 @@ formula words() {
             "production!(raw => filter => blend(1, 2) => seal)", generated
         )
 
+    def test_sort_surface_delegates_to_diet_coke_sort(self) -> None:
+        generated = compile_source(
+            "formula arrange(tasks: &mut [Task]) { "
+            "sort!(tasks, by |left, right| left.priority.cmp(&right.priority)); }"
+        )
+        self.assertIn("macro_rules! sort", generated)
+        self.assertIn("::diet_coke_sort::sort($values)", generated)
+        self.assertIn("::diet_coke_sort::sort_by($values, $compare)", generated)
+        self.assertIn(
+            "sort!(tasks, by |left, right| left.priority.cmp(&right.priority))",
+            generated,
+        )
+
     def test_reports_mismatched_delimiter_with_location(self) -> None:
         with self.assertRaisesRegex(
             CompileError, r"plant\.dc:2:5: expected '\}'"

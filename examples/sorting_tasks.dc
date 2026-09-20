@@ -1,0 +1,43 @@
+// Native task sorting backed by the separate DietCokeSort project.
+
+guide Task {
+    purpose: "Represent one queued development task in arrival order.";
+    ensures: "Equal-priority tasks retain their original arrival order when sorted.";
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+served can Task {
+    name: &'static str,
+    priority: u8,
+}
+
+guide sort_tasks {
+    purpose: "Order tasks from highest to lowest priority with DietCokeSort.";
+    requires: "The task slice is valid and exclusively borrowed.";
+    ensures: "Higher priorities come first and equal priorities remain stable.";
+    note: "sort! lowers to diet_coke_sort::sort_by; it is not Rust slice::sort.";
+}
+served formula sort_tasks(tasks: &mut [Task]) -> diet_coke_sort::SortReport {
+    sort!(tasks, by |left, right| right.priority.cmp(&left.priority))
+}
+
+served formula main() {
+    ingredient adjustable tasks = [
+        Task { name: "write docs", priority: 2 },
+        Task { name: "compile translator", priority: 3 },
+        Task { name: "add examples", priority: 2 },
+        Task { name: "refill fridge", priority: 1 },
+    ];
+
+    ingredient report = sort_tasks(&mut tasks);
+    ingredient names: Vec<_> = tasks.iter().map(|task| task.name).collect();
+
+    assert_eq!(
+        names,
+        ["compile translator", "write docs", "add examples", "refill fridge"],
+    );
+    label!(
+        "sorted {} tasks with {} comparisons via DietCokeSort",
+        report.len(),
+        report.comparisons(),
+    );
+}
