@@ -187,3 +187,7 @@ See [AI_NATIVE.md](AI_NATIVE.md) for the AI development protocol and
 [DESIGN.md](DESIGN.md) for the language rationale, grammar, ingredient model,
 and roadmap. A complete mixed Rust/AI example lives in
 [`examples/ai_native.dc`](examples/ai_native.dc).
+
+## License
+
+DietCokeRust is available under the [MIT License](LICENSE).
